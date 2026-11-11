@@ -25,32 +25,6 @@
               </router-link>
             </div>
           </div>
-
-          <!-- 右侧：通知 -->
-          <div class="flex items-center space-x-4">
-            <!-- 通知 -->
-            <div class="relative" ref="notificationRef">
-              <button @click="toggleNotifications" class="relative p-2 text-gray-400 hover:text-gray-500" aria-label="通知">
-                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                </svg>
-                <span v-if="unreadCount > 0"
-                      class="absolute top-1 right-1 min-w-[1rem] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] leading-4 text-center">
-                  {{ unreadCount }}
-                </span>
-              </button>
-              <div v-if="showNotifications" class="absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg py-2 z-50">
-                <div class="px-4 pb-2 text-sm font-medium text-gray-900 border-b">通知</div>
-                <div v-if="notifications.length === 0" class="px-4 py-6 text-center text-sm text-gray-500">暂无通知</div>
-                <div v-for="n in notifications" :key="n.id" class="px-4 py-3 hover:bg-gray-50">
-                  <div class="text-sm font-medium text-gray-900">
-                    {{ n.type === 'achievement' ? '🏅' : '🎯' }} {{ n.title }}
-                  </div>
-                  <div class="text-xs text-gray-500 mt-1">{{ n.content }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- 移动端导航 -->
@@ -105,16 +79,12 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/api'
 
 const route = useRoute()
 
-const showNotifications = ref(false)
-const notifications = ref([])
-const unreadCount = ref(0)
-const notificationRef = ref(null)
 const complianceInfo = ref({
   icp_number: '',
   algorithm_number: '',
@@ -124,7 +94,6 @@ const complianceInfo = ref({
 
 const navItems = [
   { name: '首页', path: '/', exact: true },
-  { name: '写作', path: '/writing' },
   { name: '我的作文', path: '/writings' },
   { name: '排行榜', path: '/ranking' },
   { name: '社区', path: '/community' }
@@ -145,38 +114,8 @@ const fetchComplianceInfo = async () => {
   }
 }
 
-const fetchNotifications = async () => {
-  try {
-    const res = await api.get('/notifications')
-    notifications.value = res.data.data.notifications || []
-    unreadCount.value = res.data.data.unread_count || 0
-  } catch (error) {
-    console.error('Failed to fetch notifications:', error)
-  }
-}
-
-const toggleNotifications = () => {
-  showNotifications.value = !showNotifications.value
-  if (showNotifications.value) unreadCount.value = 0  // 打开即视为已读
-}
-
-// 点击菜单外部时关闭
-const handleClickOutside = (event) => {
-  if (notificationRef.value && !notificationRef.value.contains(event.target)) showNotifications.value = false
-}
-
-watch(() => route.fullPath, () => {
-  showNotifications.value = false
-})
-
 onMounted(() => {
   fetchComplianceInfo()
-  fetchNotifications()
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
