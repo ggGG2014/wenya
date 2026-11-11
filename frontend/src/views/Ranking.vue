@@ -3,12 +3,6 @@
     <!-- 页面标题 -->
     <div class="flex justify-between items-center">
       <h1 class="text-2xl font-bold text-gray-900">📊 排行榜</h1>
-      <button
-        @click="toggleVisibility"
-        class="text-sm text-gray-600 hover:text-gray-800"
-      >
-        {{ userStore.user?.show_in_ranking ? '退出排行榜' : '加入排行榜' }}
-      </button>
     </div>
 
     <!-- Tab 切换 -->
@@ -46,9 +40,6 @@
     </div>
 
     <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
-    <div v-if="userStore.user && !userStore.user.show_in_ranking" class="text-sm text-gray-600 bg-gray-50 border rounded-lg p-4">
-      你已退出排行榜，其他同学看不到你的排名。成长曲线仍然只有你自己可见。
-    </div>
 
     <!-- 排行榜列表 -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -112,11 +103,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useUserStore } from '@/stores/user'
+import { ref, watch, onMounted } from 'vue'
 import api, { errorMessage } from '@/api'
-
-const userStore = useUserStore()
 const error = ref('')
 const activeTab = ref('overall')
 
@@ -165,18 +153,6 @@ const loadRankings = async () => {
     rankings.value = []
     userRank.value = null
     error.value = errorMessage(err, '排行榜加载失败')
-  }
-}
-
-const toggleVisibility = async () => {
-  const show = !userStore.user?.show_in_ranking
-  if (!show && !confirm('退出后其他同学将看不到你的排名，确定退出排行榜吗？')) return
-  try {
-    const res = await api.post('/ranking/toggle-visibility', { show })
-    userStore.updateUser({ show_in_ranking: res.data.data.show_in_ranking })
-    loadRankings()
-  } catch (err) {
-    error.value = errorMessage(err, '操作失败')
   }
 }
 

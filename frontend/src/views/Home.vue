@@ -3,7 +3,7 @@
     <!-- 欢迎区 -->
     <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-8 text-white">
       <h1 class="text-3xl font-bold mb-2">
-        👋 你好，{{ userStore.user?.nickname || userStore.user?.username }}！
+        👋 欢迎来到文芽！
       </h1>
       <p class="text-green-100">
         继续你的写作之旅，今天也要加油哦～
@@ -110,12 +110,10 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useUserStore } from '@/stores/user'
 import api from '@/api'
 import * as echarts from 'echarts'
 import { formatDate } from '@/utils'
 
-const userStore = useUserStore()
 const chartContainer = ref(null)
 
 const stats = ref([

@@ -9,9 +9,6 @@ const api = axios.create({
   }
 })
 
-// 未登录也可以访问的页面：在这些页面收到 401 时不跳转登录页
-const GUEST_PATHS = ['/login', '/register']
-
 // 响应拦截器
 api.interceptors.response.use(
   response => {
@@ -27,20 +24,31 @@ api.interceptors.response.use(
     return response
   },
   error => {
-    const isSessionCheck = error.config?.url === '/auth/me'
-    if (error.response?.status === 401 && !isSessionCheck &&
-        !GUEST_PATHS.includes(window.location.pathname)) {
-      const redirect = encodeURIComponent(window.location.pathname + window.location.search)
-      window.location.href = `/login?redirect=${redirect}`
+    // 401 认证错误：静默处理，因为现在无需登录
+    if (error.response?.status === 401) {
+      return Promise.reject({
+        response: { status: 401, data: { error: 'auth_required', silent: true } },
+        message: '请求失败，请稍后重试'
+      })
     }
     return Promise.reject(error)
   }
 )
 
+// 后端英文错误文案 → 中文提示，避免原始英文泄漏到界面上
+const ERROR_TEXT = {
+  'Not found': '内容不存在或已被删除'
+}
+
 // 从错误中提取可展示的提示文字（后端错误格式：{ code: 1, error, message? }）
 export const errorMessage = (err, fallback = '请求失败，请稍后重试') => {
   const data = err?.response?.data
   if (data && typeof data === 'object') {
+    // 静默错误：不显示提示
+    if (data.silent) return ''
+    // 忽略认证错误，因为现在无需登录
+    if (data.error === 'Authentication required' || data.error === 'auth_required') return fallback
+    if (ERROR_TEXT[data.error]) return ERROR_TEXT[data.error]
     if (data.error && data.message && data.message !== data.error) return `${data.error}：${data.message}`
     return data.error || data.message || fallback
   }

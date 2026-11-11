@@ -1,9 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useUserStore } from '@/stores/user'
 
 // 页面组件
-import Login from '@/views/Login.vue'
-import Register from '@/views/Register.vue'
 import Home from '@/views/Home.vue'
 import Writing from '@/views/Writing.vue'
 import WritingList from '@/views/WritingList.vue'
@@ -17,88 +14,53 @@ const routes = [
   {
     path: '/',
     name: 'Home',
-    component: Home,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: Login,
-    meta: { requiresGuest: true }
-  },
-  {
-    path: '/register',
-    name: 'Register',
-    component: Register,
-    meta: { requiresGuest: true }
+    component: Home
   },
   {
     path: '/writing',
     name: 'Writing',
-    component: Writing,
-    meta: { requiresAuth: true }
+    component: Writing
   },
   {
     path: '/writing/:id',
     name: 'WritingDetail',
-    component: Writing,
-    meta: { requiresAuth: true }
+    component: Writing
   },
   {
     path: '/writings',
     name: 'WritingList',
-    component: WritingList,
-    meta: { requiresAuth: true }
+    component: WritingList
   },
   {
     path: '/ranking',
     name: 'Ranking',
-    component: Ranking,
-    meta: { requiresAuth: true }
+    component: Ranking
   },
   {
     path: '/community',
     name: 'Community',
-    component: Community,
-    meta: { requiresAuth: true }
+    component: Community
   },
   {
     path: '/community/:id',
     name: 'WorkDetail',
-    component: WorkDetail,
-    meta: { requiresAuth: true }
+    component: WorkDetail
   },
   {
     path: '/profile',
     name: 'Profile',
-    component: Profile,
-    meta: { requiresAuth: true }
+    component: Profile
   },
   {
     path: '/settings',
     name: 'Settings',
-    component: Settings,
-    meta: { requiresAuth: true }
+    component: Settings
   }
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes
-})
-
-// 路由守卫：首次导航前先通过会话 Cookie 恢复登录状态，刷新页面不会被踢回登录页
-router.beforeEach(async (to) => {
-  const userStore = useUserStore()
-  await userStore.init()
-
-  if (to.meta.requiresAuth && !userStore.isAuthenticated) {
-    return { name: 'Login', query: { redirect: to.fullPath } }
-  }
-  if (to.meta.requiresGuest && userStore.isAuthenticated) {
-    return { name: 'Home' }
-  }
-  return true
 })
 
 export default router

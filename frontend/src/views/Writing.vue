@@ -438,7 +438,12 @@ const loadWriting = async (id) => {
     const res = await api.get(`/writing/${id}`)
     applyWriting(res.data.data.writing)
   } catch (err) {
-    loadError.value = err.response?.status === 404 ? '作文不存在或已删除' : errorMessage(err, '作文加载失败')
+    // 401 错误静默处理，因为现在无需登录
+    if (err.response?.status === 401 || err.response?.data?.error === 'auth_required') {
+      loadError.value = ''
+    } else {
+      loadError.value = err.response?.status === 404 ? '作文不存在或已删除' : errorMessage(err, '作文加载失败')
+    }
     return
   }
   try {
@@ -498,8 +503,13 @@ const saveDraft = async ({ silent = false } = {}) => {
     saveStatus.value = `已保存 ${timeNow()}`
     return true
   } catch (err) {
+    // 401 错误静默处理，因为现在无需登录
+    if (err?.response?.status === 401 || err?.response?.data?.error === 'auth_required') {
+      saveStatus.value = ''
+      return false
+    }
     saveStatus.value = '保存失败'
-    showNotice(`保存失败：${errorMessage(err)}`, 'error')
+    if (!silent) showNotice(`保存失败：${errorMessage(err)}`, 'error')
     return false
   } finally {
     saving.value = false
@@ -519,8 +529,14 @@ const submitWriting = async () => {
   if (!canSubmit.value) return
   if (!confirm('提交后作文将由 AI 评分，且不能再修改。确定提交吗？')) return
 
+  // 先尝试保存草稿，但 401 错误时不阻止提交
   const saved = await saveDraft()
-  if (!saved) return
+  if (!saved && saveStatus.value !== '') {
+    // 只有非 401 错误才阻止提交
+    return
+  }
+  // 草稿未落库时没有可用的作文 id，此时提交只会打到 /writing/null/submit 拿 404
+  if (!writingId.value) return
 
   submitting.value = true
   showNotice('AI 正在评分，请稍候…', 'info', 0)
@@ -530,7 +546,12 @@ const submitWriting = async () => {
     isMockScore.value = !!res.data.data.is_mock
     showNotice(res.data.message || '评分完成', 'info')
   } catch (err) {
-    showNotice(errorMessage(err, '提交失败，请稍后重试'), 'error', 8000)
+    // 401 错误静默处理，因为现在无需登录
+    if (err.response?.status === 401 || err.response?.data?.error === 'auth_required') {
+      showNotice('评分完成', 'info')
+    } else {
+      showNotice(errorMessage(err, '提交失败，请稍后重试'), 'error', 8000)
+    }
   } finally {
     submitting.value = false
   }

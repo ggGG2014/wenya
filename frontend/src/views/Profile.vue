@@ -6,32 +6,13 @@
     <div class="bg-white rounded-lg shadow p-6">
       <h2 class="text-lg font-bold text-gray-900 mb-4">基本信息</h2>
       <div class="flex items-center space-x-4">
-        <div v-if="userStore.user?.avatar_url" class="w-20 h-20 rounded-full overflow-hidden">
-          <img :src="userStore.user.avatar_url" alt="头像" class="w-full h-full object-cover" />
-        </div>
-        <div v-else class="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl font-bold">
-          {{ userStore.user?.nickname?.[0] || userStore.user?.username?.[0] || 'U' }}
+        <div class="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl font-bold">
+          U
         </div>
         <div class="flex-1">
-          <div v-if="!editingNickname" class="flex items-center gap-3">
-            <span class="text-xl font-bold text-gray-900">{{ userStore.user?.nickname || userStore.user?.username }}</span>
-            <button @click="startEditNickname" class="text-sm text-green-600 hover:text-green-700">修改昵称</button>
+          <div class="text-sm text-gray-500">
+            无需登录即可使用文芽的所有功能
           </div>
-          <div v-else class="flex items-center gap-2">
-            <input
-              v-model="nicknameInput"
-              maxlength="32"
-              placeholder="留空则显示用户名"
-              class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-              @keydown.enter="saveNickname"
-            />
-            <button @click="saveNickname" class="px-3 py-1 bg-green-600 text-white rounded-md text-sm">保存</button>
-            <button @click="editingNickname = false" class="px-3 py-1 text-gray-500 text-sm">取消</button>
-          </div>
-          <div class="text-sm text-gray-500 mt-1">
-            @{{ userStore.user?.username }} · {{ stageLabel(userStore.user?.school_stage) }}{{ userStore.user?.grade }}年级
-          </div>
-          <p v-if="nicknameError" class="text-sm text-red-600 mt-1">{{ nicknameError }}</p>
         </div>
       </div>
     </div>
@@ -134,19 +115,12 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { useUserStore } from '@/stores/user'
 import api, { errorMessage } from '@/api'
 import * as echarts from 'echarts'
-import { stageLabel, formatDateTime } from '@/utils'
-
-const userStore = useUserStore()
+import { formatDateTime } from '@/utils'
 const radarChart = ref(null)
 const profile = ref(null)
 let chart = null
-
-const editingNickname = ref(false)
-const nicknameInput = ref('')
-const nicknameError = ref('')
 
 const fragments = ref([])
 const memoryProfile = ref(null)
@@ -167,23 +141,6 @@ const hasMemoryProfile = computed(() => {
   const p = memoryProfile.value || {}
   return ['strength_genres', 'weakness_genres', 'improvement_areas'].some(k => p[k]?.length)
 })
-
-// ---------------------------------------------------------------- 资料
-const startEditNickname = () => {
-  nicknameInput.value = userStore.user?.nickname || ''
-  nicknameError.value = ''
-  editingNickname.value = true
-}
-
-const saveNickname = async () => {
-  try {
-    const res = await api.put('/auth/profile', { nickname: nicknameInput.value.trim() })
-    userStore.updateUser(res.data.data.user)
-    editingNickname.value = false
-  } catch (err) {
-    nicknameError.value = errorMessage(err, '昵称修改失败')
-  }
-}
 
 const loadProfile = async () => {
   try {

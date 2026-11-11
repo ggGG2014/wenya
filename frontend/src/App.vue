@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="min-h-screen bg-gray-50">
     <!-- 顶部导航栏 -->
-    <header v-if="userStore.isAuthenticated" class="bg-white shadow-sm border-b">
+    <header class="bg-white shadow-sm border-b">
       <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
           <!-- 左侧：Logo 和导航 -->
@@ -26,7 +26,7 @@
             </div>
           </div>
 
-          <!-- 右侧：通知与用户菜单 -->
+          <!-- 右侧：通知 -->
           <div class="flex items-center space-x-4">
             <!-- 通知 -->
             <div class="relative" ref="notificationRef">
@@ -48,43 +48,6 @@
                   </div>
                   <div class="text-xs text-gray-500 mt-1">{{ n.content }}</div>
                 </div>
-              </div>
-            </div>
-
-            <!-- 用户头像 -->
-            <div class="relative" ref="userMenuRef">
-              <button @click="showUserMenu = !showUserMenu" class="flex items-center space-x-2">
-                <img
-                  v-if="userStore.user?.avatar_url"
-                  :src="userStore.user.avatar_url"
-                  class="h-8 w-8 rounded-full"
-                  alt="头像"
-                />
-                <div v-else class="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center text-white font-medium">
-                  {{ userStore.user?.nickname?.[0] || userStore.user?.username?.[0] || 'U' }}
-                </div>
-                <span class="hidden md:block text-sm font-medium text-gray-700">
-                  {{ userStore.user?.nickname || userStore.user?.username }}
-                </span>
-              </button>
-
-              <!-- 下拉菜单 -->
-              <div v-if="showUserMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                <router-link to="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                  个人中心
-                </router-link>
-                <router-link to="/writings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                  我的作文
-                </router-link>
-                <router-link to="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                  设置
-                </router-link>
-                <button
-                  @click="handleLogout"
-                  class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                >
-                  退出登录
-                </button>
               </div>
             </div>
           </div>
@@ -143,20 +106,15 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+import { useRoute } from 'vue-router'
 import api from '@/api'
 
 const route = useRoute()
-const router = useRouter()
-const userStore = useUserStore()
 
-const showUserMenu = ref(false)
 const showNotifications = ref(false)
 const notifications = ref([])
 const unreadCount = ref(0)
 const notificationRef = ref(null)
-const userMenuRef = ref(null)
 const complianceInfo = ref({
   icp_number: '',
   algorithm_number: '',
@@ -188,7 +146,6 @@ const fetchComplianceInfo = async () => {
 }
 
 const fetchNotifications = async () => {
-  if (!userStore.isAuthenticated) return
   try {
     const res = await api.get('/notifications')
     notifications.value = res.data.data.notifications || []
@@ -200,34 +157,21 @@ const fetchNotifications = async () => {
 
 const toggleNotifications = () => {
   showNotifications.value = !showNotifications.value
-  showUserMenu.value = false
   if (showNotifications.value) unreadCount.value = 0  // 打开即视为已读
-}
-
-// 登出
-const handleLogout = async () => {
-  showUserMenu.value = false
-  await userStore.logout()
-  router.push('/login')
 }
 
 // 点击菜单外部时关闭
 const handleClickOutside = (event) => {
   if (notificationRef.value && !notificationRef.value.contains(event.target)) showNotifications.value = false
-  if (userMenuRef.value && !userMenuRef.value.contains(event.target)) showUserMenu.value = false
 }
 
 watch(() => route.fullPath, () => {
-  showUserMenu.value = false
   showNotifications.value = false
 })
 
-watch(() => userStore.isAuthenticated, (loggedIn) => {
-  if (loggedIn) fetchNotifications()
-}, { immediate: true })
-
 onMounted(() => {
   fetchComplianceInfo()
+  fetchNotifications()
   document.addEventListener('click', handleClickOutside)
 })
 
